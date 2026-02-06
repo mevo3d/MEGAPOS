@@ -1,0 +1,78 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: megamayoreo_postgres
+    environment:
+      POSTGRES_DB: megamayoreo
+      POSTGRES_USER: superadmin
+      POSTGRES_PASSWORD: 123456
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # - ./database/migrations:/docker-entrypoint-initdb.d  # Comentado: ejecutaremos migraciones manualmente
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U superadmin -d megamayoreo" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:alpine
+    container_name: megamayoreo_redis
+    ports:
+      - "6379:6379"
+
+  # RabbitMQ Message Broker
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: megamayoreo_rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  # Backend Node.js
+  backend:
+    build: ./backend
+    container_name: megamayoreo_backend
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://superadmin:123456@postgres:5432/megamayoreo
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://rabbitmq
+      USE_SQLITE: "false"
+      JWT_SECRET: tu_secreto_jwt_dev
+      PORT: 4847
+    ports:
+      - "4847:4847"
+    volumes:
+      # Hot reload: tus cambios se reflejan automáticamente
+      - ./backend:/app
+      - /app/node_modules # No sobreescribir node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+    command: npm run dev
+
+  # Frontend React (opcional)
+  frontend:
+    build: ./frontend
+    container_name: megamayoreo_frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      # Hot reload: cambios automáticos en frontend
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:4847
+    command: npm run dev
+
+volumes:
+  postgres_data:

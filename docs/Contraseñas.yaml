@@ -1,0 +1,19 @@
+Contraseña para todos: 123456
+Usuarios Disponibles:
+✅ Usuario: superadmin → Panel: Administrador Principal
+✅ Usuario: gerente → Panel: Gerente/Administrador
+✅ Usuario: caja1 → Panel: Punto de Venta (POS)
+✅ Usuario: caja2 → Panel: Punto de Venta (POS)
+✅ Usuario: vendedor1 → Panel: Punto de Venta (POS)
+✅ Usuario: test → Panel: Administrador
+🌐 ENTRA AHORA MISMO:
+http://localhost:4444
+Recomendación:
+Usa usuario: superadmin y contraseña: 123456 para acceder al panel de administración completo, o usa usuario: caja1 y contraseña: 123456 para el punto de venta.
+✅ Funciones que ahora funcionan:
+✅ Login con username simple (ej: "superadmin")
+✅ Login con email completo (ej: "admin@megamayoreo.com")
+✅ Redirección automática al panel correspondiente según rol
+✅ Sin errores de CORS
+✅ Interface funcionando correctamente
+¡Todo está arreglado y funcionando! 🎉

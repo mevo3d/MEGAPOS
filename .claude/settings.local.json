@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker-compose:*)",
+      "Bash(docker exec:*)",
+      "Bash(curl:*)",
+      "Bash(npm install:*)",
+      "Bash(findstr:*)",
+      "Bash(tasklist:*)",
+      "Bash(node:*)",
+      "Bash(pg_isready:*)",
+      "Bash(npm run dev:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(dir:*)",
+      "Bash(psql:*)",
+      "Bash(npm start)",
+      "Bash(rm:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker stop:*)",
+      "Bash(docker rmi:*)",
+      "Bash(npm run status:*)",
+      "Bash(sc query:*)",
+      "Bash(where:*)",
+      "Bash(copy:*)",
+      "Bash(cat:*)",
+      "Bash(taskkill:*)",
+      "Bash(netstat:*)",
+      "Bash(cmd //c \"taskkill /PID 70820 /F\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

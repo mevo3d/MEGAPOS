@@ -1,0 +1,85 @@
+type Query {
+  # Catálogo
+  productos(limit: Int, offset: Int, categoria_id: Int): [Producto!]!
+  producto(sku: String!): Producto
+  categorias: [Categoria!]!
+  
+  # Stock en tiempo real
+  stockDisponible(sku: String!): StockInfo!
+  verificarDisponibilidad(items: [ItemInput!]!): DisponibilidadResult!
+}
+
+type Mutation {
+  # Gestión de Pedidos Online
+  crearPedido(input: PedidoInput!): PedidoResult!
+  actualizarEstadoPedido(id: ID!, estado: String!): PedidoResult!
+  
+  # Reservas
+  reservarStock(orden_id: String!, items: [ItemInput!]!): ReservaResult!
+}
+
+type Subscription {
+  # Actualizaciones en tiempo real
+  stockActualizado(sku: String!): StockInfo!
+  pedidoActualizado(id: ID!): Pedido!
+}
+
+# Tipos
+type Producto {
+  id: ID!
+  sku: String!
+  nombre: String!
+  descripcion: String
+  precio: Float!
+  imagen_url: String
+  categoria: Categoria
+  stock_disponible: Int
+}
+
+type Categoria {
+  id: ID!
+  nombre: String!
+  descripcion: String
+}
+
+type StockInfo {
+  sku: String!
+  disponible: Int!
+  reservado: Int!
+  sucursal_id: Int!
+}
+
+type DisponibilidadResult {
+  disponible: Boolean!
+  items_faltantes: [String]
+}
+
+type PedidoResult {
+  success: Boolean!
+  message: String
+  pedido_id: ID
+}
+
+type Pedido {
+  id: ID!
+  estado: String!
+  total: Float!
+}
+
+type ReservaResult {
+  success: Boolean!
+  expira_en: String # ISO Date
+}
+
+# Inputs
+input ItemInput {
+  sku: String!
+  cantidad: Int!
+}
+
+input PedidoInput {
+  cliente_email: String!
+  items: [ItemInput!]!
+  total: Float!
+  metodo_pago: String!
+}
