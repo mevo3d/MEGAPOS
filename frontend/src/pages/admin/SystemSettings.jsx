@@ -5,13 +5,14 @@ import { Input } from '../../components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import {
     Settings, Save, Building2, Phone, Mail, MapPin,
-    FileText, DollarSign, Percent, Clock, Shield, Star
+    FileText, DollarSign, Percent, Clock, Shield, Star, Zap, Eye, EyeOff
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function SystemSettings() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [showApiKey, setShowApiKey] = useState(false);
     const [activeTab, setActiveTab] = useState('empresa');
     const [config, setConfig] = useState({
         // Empresa
@@ -57,7 +58,10 @@ export default function SystemSettings() {
 
         // Seguridad
         sesion_expiracion_horas: '24',
-        intentos_login_max: '5'
+        intentos_login_max: '5',
+
+        // Integraciones
+        openai_api_key: ''
     });
 
     useEffect(() => {
@@ -66,11 +70,12 @@ export default function SystemSettings() {
 
     const fetchConfig = async () => {
         try {
-            const res = await api.get('/configuracion');
-            if (res.data && res.data.configuracion) {
+            const res = await api.get('/config'); // Updated endpoint
+            // Backend returns array of { key, value }
+            if (res.data) {
                 const configObj = {};
-                res.data.configuracion.forEach(c => {
-                    configObj[c.clave] = c.valor;
+                res.data.forEach(c => {
+                    configObj[c.key] = c.value; // Map key->value
                 });
                 setConfig(prev => ({ ...prev, ...configObj }));
             }
@@ -89,11 +94,14 @@ export default function SystemSettings() {
         setSaving(true);
         try {
             // Guardar cada configuración
-            for (const [clave, valor] of Object.entries(config)) {
-                await api.post('/configuracion', { clave, valor });
+            for (const [key, value] of Object.entries(config)) {
+                // Use PUT and send { key, value }
+                // Convert value to string if necessary, though backend stores as TEXT
+                await api.put('/config', { key, value: String(value) });
             }
             toast.success('Configuración guardada correctamente');
         } catch (error) {
+            console.error(error);
             toast.error('Error guardando configuración');
         } finally {
             setSaving(false);
@@ -107,7 +115,8 @@ export default function SystemSettings() {
         { id: 'ventas', label: 'Ventas', icon: DollarSign },
         { id: 'tickets', label: 'Tickets', icon: FileText },
         { id: 'inventario', label: 'Inventario', icon: Settings },
-        { id: 'seguridad', label: 'Seguridad', icon: Shield }
+        { id: 'seguridad', label: 'Seguridad', icon: Shield },
+        { id: 'integraciones', label: 'Integraciones', icon: Zap }
     ];
 
     if (loading) {
@@ -132,12 +141,12 @@ export default function SystemSettings() {
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-2 bg-white rounded-lg p-1 shadow-sm">
+            <div className="flex gap-2 bg-white rounded-lg p-1 shadow-sm overflow-x-auto">
                 {tabs.map(tab => (
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`flex-1 py-2 px-4 rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-all
+                        className={`flex-1 py-2 px-4 rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-all whitespace-nowrap
                             ${activeTab === tab.id
                                 ? 'bg-blue-500 text-white shadow'
                                 : 'text-gray-600 hover:bg-gray-100'}`}
@@ -535,6 +544,65 @@ export default function SystemSettings() {
                     </Card>
                 )
             }
+
+            {/* Tab: Integraciones */}
+            {
+                activeTab === 'integraciones' && (
+                    <Card className="shadow-lg border-0 bg-gradient-to-br from-indigo-50 to-white">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Zap className="w-5 h-5 text-indigo-600" />
+                                Integraciones y APIs
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                                <h4 className="font-bold text-blue-800 mb-1 flex items-center gap-2">
+                                    <Zap className="h-4 w-4" />
+                                    Importación Inteligente con I.A.
+                                </h4>
+                                <p className="text-sm text-blue-700">
+                                    Configura tu API Key de OpenAI para habilitar la lectura automática de facturas a través de fotos.
+                                    Esta función permite escanear documentos y aprender automáticamente las equivalencias de tus productos.
+                                </p>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="block text-sm font-medium text-gray-700">
+                                    OpenAI API Key (GPT-4 Vision)
+                                </label>
+                                <div className="relative">
+                                    <Input
+                                        type={showApiKey ? "text" : "password"}
+                                        placeholder="sk-proj-..."
+                                        value={config.openai_api_key || ''}
+                                        onChange={(e) => handleChange('openai_api_key', e.target.value)}
+                                        className="pl-10 pr-10"
+                                    />
+                                    <div className="absolute left-3 top-2.5 text-gray-400">
+                                        <Shield className="h-5 w-5" />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowApiKey(!showApiKey)}
+                                        className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 focus:outline-none"
+                                    >
+                                        {showApiKey ? (
+                                            <EyeOff className="h-5 w-5" />
+                                        ) : (
+                                            <Eye className="h-5 w-5" />
+                                        )}
+                                    </button>
+                                </div>
+                                <p className="text-xs text-gray-500">
+                                    La clave se almacena de forma segura en tu base de datos local. Nunca compartas esta clave.
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )
+            }
         </div >
     );
 }
+

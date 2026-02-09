@@ -8,8 +8,7 @@ const {
     getTransferencias,
     getTransferenciaById,
     confirmarRecepcion,
-    getTransferenciaById,
-    confirmarRecepcion,
+
     getGlobalStock,
     getStockPorSucursal
 } = require('../controllers/inventario.controller');

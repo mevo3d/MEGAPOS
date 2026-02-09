@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../../context/authStore';
+import { useThemeStore } from '../../context/themeStore';
 import { Button } from '../../components/ui/Button';
+import { ThemeToggle } from '../../components/ui/ThemeToggle';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { LogOut, TrendingUp, Users, DollarSign, Activity, Zap, Clock, ShoppingBag, UserPlus, Settings, Store, Upload, ArrowLeftRight } from 'lucide-react';
 import api from '../../utils/api';
@@ -9,8 +11,8 @@ import UserManagement from './UserManagement';
 import StoreManagement from './StoreManagement';
 import ProductImport from './ProductImport';
 import Productos from './Productos';
-import SystemSettings from './SystemSettings'; // Import SystemSettings
-import TraspasosPanel from './TraspasosPanel'; // Import TraspasosPanel
+import SystemSettings from './SystemSettings';
+import TraspasosPanel from './TraspasosPanel';
 import { AlertasStock } from '../../components/inventario/AlertasStock';
 
 export default function AdminDashboard() {
@@ -37,7 +39,9 @@ export default function AdminDashboard() {
 
     useEffect(() => {
         // Implementación de WebSocket
-        const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:4847');
+        // Usamos el mismo origen del navegador pero con puerto del backend
+        const socketUrl = import.meta.env.VITE_SOCKET_URL || `${window.location.protocol}//${window.location.hostname}:4847`;
+        const socket = io(socketUrl);
 
         socket.on('connect', () => setIsConnected(true));
         socket.on('disconnect', () => setIsConnected(false));
@@ -234,6 +238,7 @@ export default function AdminDashboard() {
                             </div>
                         </div>
                         <div className="flex items-center gap-4">
+                            <ThemeToggle />
                             <div className={`px-4 py-2 rounded-full text-xs font-semibold flex items-center gap-2 ${isConnected
                                 ? 'bg-green-100 text-green-800 border border-green-200'
                                 : 'bg-red-100 text-red-800 border border-red-200'

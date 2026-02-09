@@ -4,10 +4,10 @@ const cedisController = require('../controllers/cedis.controller');
 const auth = require('../middleware/auth');
 
 // Dashboard KPIs
-router.get('/kpis', [auth.verifyToken, auth.isGerenteCedis], cedisController.getKPIs);
+router.get('/kpis', [auth.verifyToken, auth.isGerenteOrAdmin], cedisController.getKPIs);
 
 // Recepciones
-router.get('/ordenes-pendientes', [auth.verifyToken, auth.isGerenteCedis], cedisController.getOrdenesPendientes);
+router.get('/ordenes-pendientes', [auth.verifyToken, auth.isGerenteOrAdmin], cedisController.getOrdenesPendientes);
 router.get('/ordenes/:id/detalle', [auth.verifyToken], cedisController.getOrdenDetalle);
 router.post('/recepcion', [auth.verifyToken, auth.isBodeguero], cedisController.recibirMercancia); // Bodeguero recibe
 

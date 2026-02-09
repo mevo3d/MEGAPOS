@@ -9,7 +9,8 @@ exports.getConfiguracion = async (req, res) => {
     const result = await pool.query(
       'SELECT * FROM configuracion_sistema ORDER BY clave'
     );
-    res.json({ success: true, data: result.rows });
+    // El frontend (POS.jsx) espera un objeto con la propiedad "configuracion"
+    res.json({ success: true, configuracion: result.rows });
   } catch (error) {
     logger.error('Error obteniendo configuración:', error);
     res.status(500).json({ success: false, message: error.message });
@@ -69,7 +70,7 @@ exports.getLogo = async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, message: 'Logo no encontrado' });
+      return res.status(204).end();
     }
 
     const archivo = result.rows[0];
@@ -77,15 +78,15 @@ exports.getLogo = async (req, res) => {
 
     // Verificar que el archivo existe
     if (!fs.existsSync(rutaArchivo)) {
-      return res.status(404).json({ success: false, message: 'Archivo no encontrado' });
+      logger.warn(`El archivo de logo ${archivo.nombre_guardado} no existe en disco`);
+      return res.status(204).end();
     }
 
     // Enviar el archivo
     res.sendFile(rutaArchivo);
   } catch (error) {
     logger.error('Error obteniendo logo:', error);
-    // Devolver 404 en lugar de 500 para que el frontend maneje esto elegantemente
-    res.status(404).json({ success: false, message: 'Logo no disponible' });
+    res.status(204).end();
   }
 };
 

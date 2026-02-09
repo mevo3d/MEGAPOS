@@ -76,6 +76,11 @@ const createEmpleado = async (req, res) => {
             return res.status(400).json({ message: 'Faltan campos requeridos' });
         }
 
+        // Solo superadmin puede crear otros superadmin
+        if (rol === 'superadmin' && req.user.rol !== 'superadmin') {
+            return res.status(403).json({ message: 'Solo un Superusuario puede crear otros Superusuarios' });
+        }
+
         // Verificar si el email ya existe
         const emailExists = await pool.query(
             'SELECT id FROM empleados WHERE email = $1',

@@ -25,3 +25,6 @@ yarn-error.log*
 logs/
 *.log
 nul
+
+# Allow database for backup
+!backend/data/megamayoreo.db

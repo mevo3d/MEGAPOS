@@ -290,13 +290,13 @@ class InventarioService {
                 COALESCE(i.stock_minimo, 0) as stock_minimo
             FROM sucursales s
             LEFT JOIN inventario_sucursal i ON s.id = i.sucursal_id AND i.producto_id = $1
-            WHERE s.activa = true
+            WHERE s.activo = 1
             ORDER BY s.id ASC
         `;
         const result = await pool.query(query, [productoId]);
         return result.rows;
     }
 }
-}
+
 
 module.exports = new InventarioService();

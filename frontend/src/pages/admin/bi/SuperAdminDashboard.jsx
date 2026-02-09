@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../../../services/api';
+import { ThemeToggle } from '../../../components/ui/ThemeToggle';
+import { useThemeStore } from '../../../context/themeStore';
 
 const SuperAdminDashboard = () => {
     const mapRef = useRef(null);
@@ -254,6 +256,9 @@ const SuperAdminDashboard = () => {
                     </div>
 
                     <div className="flex items-center gap-3">
+                        {/* Theme Toggle */}
+                        <ThemeToggle />
+
                         <button className="relative p-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
                             <Bell className="w-5 h-5" />
                             {(stats?.alertasInventario || 0) > 0 && (
@@ -454,8 +459,8 @@ const SuperAdminDashboard = () => {
                                 <div key={rutero.id} className="px-4 py-3 flex items-center justify-between hover:bg-slate-700/30">
                                     <div className="flex items-center gap-3">
                                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${rutero.estado_ubicacion === 'en_ruta'
-                                                ? 'bg-green-500/20 text-green-400'
-                                                : 'bg-slate-700 text-slate-400'
+                                            ? 'bg-green-500/20 text-green-400'
+                                            : 'bg-slate-700 text-slate-400'
                                             }`}>
                                             🚚
                                         </div>
@@ -468,10 +473,10 @@ const SuperAdminDashboard = () => {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <span className={`px-2 py-1 rounded-full text-xs ${rutero.estado_ubicacion === 'en_ruta'
-                                                ? 'bg-green-500/20 text-green-400'
-                                                : rutero.estado_ubicacion === 'disponible'
-                                                    ? 'bg-blue-500/20 text-blue-400'
-                                                    : 'bg-slate-700 text-slate-400'
+                                            ? 'bg-green-500/20 text-green-400'
+                                            : rutero.estado_ubicacion === 'disponible'
+                                                ? 'bg-blue-500/20 text-blue-400'
+                                                : 'bg-slate-700 text-slate-400'
                                             }`}>
                                             {rutero.estado_ubicacion || 'Inactivo'}
                                         </span>

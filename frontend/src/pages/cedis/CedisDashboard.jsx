@@ -4,6 +4,7 @@ import { Building2, PackageCheck, Map, AlertTriangle, TrendingUp, Clock, Package
 import { useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
 import { Loading } from '../../components/ui/Loading';
+import { ThemeToggle } from '../../components/ui/ThemeToggle';
 
 export default function CedisDashboard() {
     const navigate = useNavigate();
@@ -31,8 +32,11 @@ export default function CedisDashboard() {
         <div className="p-6 bg-gray-50 min-h-screen">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-gray-800">Panel de Gerente CEDIS</h1>
-                <div className="text-sm text-gray-500">
-                    {new Date().toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                <div className="flex items-center gap-4">
+                    <ThemeToggle />
+                    <div className="text-sm text-gray-500">
+                        {new Date().toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    </div>
                 </div>
             </div>
 

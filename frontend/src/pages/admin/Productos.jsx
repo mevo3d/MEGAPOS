@@ -4,15 +4,16 @@ import api from '../../utils/api';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
-import { Plus, Search, Edit, Trash2, Package, X, Upload, Image, Sparkles, Wand2, Truck } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Package, X, Upload, Image, Sparkles, Wand2, Truck, Download } from 'lucide-react';
 import { Loading } from '../../components/ui/Loading';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../../context/authStore';
 import TraspasosPanel from './TraspasosPanel'; // Import integration
 import ProductImport from './ProductImport';
 import InvoiceImport from './InvoiceImport';
+import Faltantes from './Faltantes';
 import TransferCenterModal from '../../components/inventario/TransferCenterModal';
-import { FileSpreadsheet, List, Camera, Truck as TruckIcon } from 'lucide-react'; // Added icons for tabs
+import { FileSpreadsheet, List, Camera, Truck as TruckIcon, AlertTriangle, History } from 'lucide-react'; // Added icons for tabs
 
 export default function Productos() {
     const [productos, setProductos] = useState([]);
@@ -37,7 +38,8 @@ export default function Productos() {
 
     // New state for section navigation
     const { user } = useAuthStore();
-    const [currentSection, setCurrentSection] = useState('list'); // list, excel, invoice
+    const [currentSection, setCurrentSection] = useState('list'); // list, importar, faltantes, traspasos
+    const [importSubTab, setImportSubTab] = useState('excel'); // excel, factura
     const [transferModalOpen, setTransferModalOpen] = useState(false);
 
     // Form
@@ -274,16 +276,22 @@ export default function Productos() {
                         <List className="w-4 h-4" /> Catálogo
                     </button>
                     <button
-                        onClick={() => setCurrentSection('excel')}
-                        className={`px-4 py-2 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors ${currentSection === 'excel' ? 'border-green-600 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                        onClick={() => setCurrentSection('importar')}
+                        className={`px-4 py-2 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors ${currentSection === 'importar' ? 'border-green-600 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                     >
-                        <FileSpreadsheet className="w-4 h-4" /> Importar Excel
+                        <Download className="w-4 h-4" /> Importar
                     </button>
                     <button
-                        onClick={() => setCurrentSection('invoice')}
-                        className={`px-4 py-2 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors ${currentSection === 'invoice' ? 'border-purple-600 text-purple-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                        onClick={() => setCurrentSection('faltantes')}
+                        className={`px-4 py-2 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors ${currentSection === 'faltantes' ? 'border-orange-600 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                     >
-                        <Camera className="w-4 h-4" /> Importar Factura (Foto)
+                        <AlertTriangle className="w-4 h-4" /> Faltantes
+                    </button>
+                    <button
+                        onClick={() => setCurrentSection('movimientos')}
+                        className={`px-4 py-2 text-sm font-medium flex items-center gap-2 border-b-2 transition-colors ${currentSection === 'movimientos' ? 'border-purple-600 text-purple-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+                    >
+                        <History className="w-4 h-4" /> Movimientos
                     </button>
                     <button
                         onClick={() => setCurrentSection('traspasos')}
@@ -291,11 +299,54 @@ export default function Productos() {
                     >
                         <Truck className="w-4 h-4" /> Centro de Traspasos
                     </button>
-
                 </div>
 
-                {currentSection === 'excel' && <ProductImport userRole={user?.rol} sucursalId={user?.sucursal_id} />}
-                {currentSection === 'invoice' && <InvoiceImport />}
+                {/* Importar Section with Sub-tabs */}
+                {currentSection === 'importar' && (
+                    <div className="space-y-4">
+                        {/* Sub-tabs for import types */}
+                        <div className="flex gap-2 bg-gray-50 p-2 rounded-lg">
+                            <button
+                                onClick={() => setImportSubTab('excel')}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${importSubTab === 'excel' ? 'bg-white shadow text-green-700' : 'text-gray-600 hover:bg-gray-100'}`}
+                            >
+                                <FileSpreadsheet className="w-4 h-4" /> Importar desde Excel
+                            </button>
+                            <button
+                                onClick={() => setImportSubTab('factura')}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors ${importSubTab === 'factura' ? 'bg-white shadow text-purple-700' : 'text-gray-600 hover:bg-gray-100'}`}
+                            >
+                                <Camera className="w-4 h-4" /> Importar desde Factura (Foto/IA)
+                            </button>
+                        </div>
+
+                        {importSubTab === 'excel' && <ProductImport userRole={user?.rol} sucursalId={user?.sucursal_id} />}
+                        {importSubTab === 'factura' && <InvoiceImport />}
+                    </div>
+                )}
+
+                {/* Faltantes Section */}
+                {currentSection === 'faltantes' && <Faltantes />}
+
+                {/* Movimientos Section - Historial de todos los movimientos */}
+                {currentSection === 'movimientos' && (
+                    <Card className="glass border-0 shadow-lg">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-indigo-700">
+                                <History className="w-6 h-6" />
+                                Historial de Movimientos
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-center py-12 text-gray-500">
+                                <History className="w-16 h-16 mx-auto mb-4 text-indigo-300" />
+                                <p className="text-lg font-medium">Próximamente</p>
+                                <p className="text-sm">Aquí verás el historial de todos los traspasos entre sucursales y CEDIS.</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
                 {currentSection === 'traspasos' && <TraspasosPanel />}
 
                 {currentSection === 'list' && (

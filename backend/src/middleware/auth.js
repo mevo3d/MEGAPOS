@@ -58,7 +58,7 @@ const canUploadImages = (req, res, next) => {
 };
 
 const isBodeguero = (req, res, next) => {
-    if (!['admin', 'superadmin', 'gerente', 'bodeguero', 'gerente_cedis'].includes(req.user.rol)) {
+    if (!['admin', 'superadmin', 'gerente', 'bodeguero'].includes(req.user.rol)) {
         return res.status(403).json({ message: 'Requiere rol de Bodeguero' });
     }
     next();
@@ -71,9 +71,19 @@ const isRutero = (req, res, next) => {
     next();
 };
 
-const isGerenteCedis = (req, res, next) => {
-    if (!['admin', 'superadmin', 'gerente_cedis'].includes(req.user.rol)) {
-        return res.status(403).json({ message: 'Requiere rol de Gerente CEDIS' });
+// Middleware exclusivo para superadmin (configuración crítica del sistema)
+const isSuperAdminOnly = (req, res, next) => {
+    if (req.user.rol !== 'superadmin') {
+        return res.status(403).json({ message: 'Solo el Superusuario puede realizar esta acción' });
+    }
+    next();
+};
+
+// Middleware para roles que pueden cobrar en POS
+const canUsePOS = (req, res, next) => {
+    const allowedRoles = ['admin', 'superadmin', 'gerente', 'cajero', 'telemarketing'];
+    if (!allowedRoles.includes(req.user.rol)) {
+        return res.status(403).json({ message: 'No tienes permiso para cobrar en punto de venta' });
     }
     next();
 };
@@ -81,7 +91,7 @@ const isGerenteCedis = (req, res, next) => {
 module.exports = {
     verifyToken, isAdmin, isSuperAdmin, isGerenteOrAdmin,
     canCreateProducts, canUploadImages,
-    isBodeguero, isRutero, isGerenteCedis
+    isBodeguero, isRutero, isSuperAdminOnly, canUsePOS
 };
 
 

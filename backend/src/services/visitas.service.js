@@ -66,7 +66,7 @@ class VisitasService {
      * Obtener la ruta asignada a un usuario
      */
     async getRutaAsignada(userId) {
-        const res = await pool.query('SELECT * FROM rutas WHERE vendedor_id = $1 AND activa = true', [userId]);
+        const res = await pool.query('SELECT * FROM rutas WHERE vendedor_id = $1 AND activo = 1', [userId]);
         return res.rows[0];
     }
 

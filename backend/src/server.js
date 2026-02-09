@@ -29,15 +29,17 @@ const { connectRabbitMQ } = require('./config/rabbitmq');
 const app = express();
 const server = http.createServer(app);
 
-// Configuración de Socket.IO
-const allowedOrigins = process.env.FRONTEND_URL ?
-    process.env.FRONTEND_URL.split(',').map(origin => origin.trim()) :
-    ['*'];
+// Configuración de Socket.IO - CORS permisivo para desarrollo
+const isDev = process.env.NODE_ENV !== 'production';
+const allowedOrigins = isDev
+    ? true  // En desarrollo, aceptar cualquier origen
+    : (process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',').map(origin => origin.trim()) : ['*']);
 
 const io = new Server(server, {
     cors: {
         origin: allowedOrigins,
-        methods: ['GET', 'POST']
+        methods: ['GET', 'POST'],
+        credentials: true
     }
 });
 
@@ -47,7 +49,8 @@ app.use(helmet({
 }));
 app.use(compression());
 app.use(cors({
-    origin: allowedOrigins
+    origin: allowedOrigins,
+    credentials: true
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -76,6 +79,7 @@ const routeFiles = [
     'import.routes',
     'empleados.routes',
     'configuracion.routes',
+    'config.routes', // New Config Routes for SuperAdmin
     'sucursales.routes',
     'puntosVenta.routes',
     'cajas.routes',
@@ -100,7 +104,8 @@ const routeFiles = [
     'clasificacionClientes.routes',
     'admin.routes',
     'coordinacion.routes',
-    'preventa.routes'
+    'preventa.routes',
+    'faltantes.routes'
 ];
 
 routeFiles.forEach(routeFile => {

@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/Button';
 import { Users, UserPlus, Edit, Trash2, Eye, EyeOff, Key, Mail, User, MapPin, Building } from 'lucide-react';
 import api from '../../utils/api';
 import toast from 'react-hot-toast';
+import { useAuthStore } from '../../context/authStore';
 
 const UserManagement = () => {
     const queryClient = useQueryClient();
@@ -184,13 +185,11 @@ const UserManagement = () => {
         { value: 'gerente', label: 'Gerente' },
         { value: 'cajero', label: 'Cajero' },
         { value: 'vendedor', label: 'Vendedor' },
-        { value: 'chofer', label: 'Chofer' },
         { value: 'telemarketing', label: 'Telemarketing' },
         { value: 'compras', label: 'Compras' },
         { value: 'capturista', label: 'Capturista Móvil' },
         { value: 'bodeguero', label: 'Bodeguero' },
-        { value: 'rutero', label: 'Rutero' },
-        { value: 'gerente_cedis', label: 'Gerente CEDIS' }
+        { value: 'rutero', label: 'Rutero' }
     ];
 
     if (isLoading) {

@@ -111,33 +111,60 @@ const db = new sqlite3.Database(dbPath, (err) => {
                 )
             `);
 
-            // Tabla de productos completa (reemplaza la simplificada anterior si es necesario)
+            // Tabla de productos completa (EXTENDIDA con campos de facturas)
             db.run(`
                 CREATE TABLE IF NOT EXISTS productos_catalogo (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     codigo TEXT UNIQUE,
+                    sku TEXT,
+                    codigo_barras TEXT,
                     nombre TEXT NOT NULL,
                     descripcion TEXT,
+                    descripcion_corta TEXT,
                     categoria TEXT,
+                    subcategoria TEXT,
+                    marca TEXT,
+                    modelo TEXT,
+                    -- Precios
                     precio_compra DECIMAL(10,2) DEFAULT 0,
                     precio_venta DECIMAL(10,2) NOT NULL,
-                    tiene_inventario INTEGER DEFAULT 1,
-                    activo INTEGER DEFAULT 1,
-                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    nombre_proveedor TEXT,
-                    sku_proveedor TEXT,
-                    marca TEXT,
-                    descripcion_corta TEXT,
-                    descripcion_seo TEXT,
-                    palabras_clave TEXT,
-                    procesado_ia INTEGER DEFAULT 0,
                     precio_1 DECIMAL(10,2) DEFAULT 0,
                     precio_2 DECIMAL(10,2) DEFAULT 0,
                     precio_3 DECIMAL(10,2) DEFAULT 0,
                     precio_4 DECIMAL(10,2) DEFAULT 0,
                     precio_5 DECIMAL(10,2) DEFAULT 0,
+                    -- Códigos SAT/Fiscales
+                    clave_sat TEXT,
+                    unidad_sat TEXT,
+                    -- Códigos del Proveedor
+                    sku_proveedor TEXT,
+                    nombre_proveedor TEXT,
+                    clave_proveedor TEXT,
+                    -- Dimensiones físicas
+                    peso_kg DECIMAL(10,3),
+                    ancho_cm DECIMAL(10,2),
+                    largo_cm DECIMAL(10,2),
+                    alto_cm DECIMAL(10,2),
+                    volumen_cm3 DECIMAL(12,2),
+                    -- Para papelería
+                    gramaje TEXT,
+                    -- Empaque
+                    unidad_medida TEXT DEFAULT 'PIEZA',
+                    tipo_empaque TEXT,
+                    piezas_por_caja INTEGER,
+                    cajas_por_tarima INTEGER,
+                    -- SEO/Web
+                    descripcion_seo TEXT,
+                    palabras_clave TEXT,
+                    -- Control
+                    tiene_inventario INTEGER DEFAULT 1,
+                    activo INTEGER DEFAULT 1,
+                    procesado_ia INTEGER DEFAULT 0,
                     usuario_captura_id INTEGER,
-                    capturado_desde TEXT
+                    capturado_desde TEXT,
+                    fecha_llegada DATETIME,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             `);
 
@@ -149,6 +176,182 @@ const db = new sqlite3.Database(dbPath, (err) => {
             db.run("ALTER TABLE productos_catalogo ADD COLUMN precio_5 DECIMAL(10,2) DEFAULT 0", (err) => { });
             db.run("ALTER TABLE productos_catalogo ADD COLUMN usuario_captura_id INTEGER", (err) => { });
             db.run("ALTER TABLE productos_catalogo ADD COLUMN capturado_desde TEXT", (err) => { });
+            // Migraciones para campos extendidos de productos (si tabla ya existe)
+            db.run("ALTER TABLE productos_catalogo ADD COLUMN sku TEXT", (err) => { });
+            db.run("ALTER TABLE productos_catalogo ADD COLUMN codigo_barras TEXT", (err) => { });
+            db.run("ALTER TABLE productos_catalogo ADD COLUMN subcategoria TEXT", (err) => { });
+            db.run("ALTER TABLE productos_catalogo ADD COLUMN modelo TEXT", (err) => { });
+            db.run("ALTER TABLE productos_catalogo ADD COLUMN clave_sat TEXT", (err) => { });
+            db.run("ALTER TABLE productos_catalogo ADD COLUMN unidad_sat TEXT", (err) => { });
+            db.run("ALTER TABLE productos_catalogo ADD COLUMN clave_proveedor TEXT", (err) => { });
+            db.run("ALTER TABLE productos_catalogo ADD COLUMN peso_kg DECIMAL(10,3)", (err) => { });
+            db.run("ALTER TABLE productos_catalogo ADD COLUMN ancho_cm DECIMAL(10,2)", (err) => { });
+            db.run("ALTER TABLE productos_catalogo ADD COLUMN largo_cm DECIMAL(10,2)", (err) => { });
+            db.run("ALTER TABLE productos_catalogo ADD COLUMN alto_cm DECIMAL(10,2)", (err) => { });
+            db.run("ALTER TABLE productos_catalogo ADD COLUMN volumen_cm3 DECIMAL(12,2)", (err) => { });
+            db.run("ALTER TABLE productos_catalogo ADD COLUMN gramaje TEXT", (err) => { });
+            db.run("ALTER TABLE productos_catalogo ADD COLUMN unidad_medida TEXT DEFAULT 'PIEZA'", (err) => { });
+            db.run("ALTER TABLE productos_catalogo ADD COLUMN tipo_empaque TEXT", (err) => { });
+            db.run("ALTER TABLE productos_catalogo ADD COLUMN piezas_por_caja INTEGER", (err) => { });
+            db.run("ALTER TABLE productos_catalogo ADD COLUMN cajas_por_tarima INTEGER", (err) => { });
+            db.run("ALTER TABLE productos_catalogo ADD COLUMN fecha_llegada DATETIME", (err) => { });
+            db.run("ALTER TABLE productos_catalogo ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP", (err) => { });
+
+            // Migraciones para campos extendidos de proveedores (si tabla ya existe)
+            db.run("ALTER TABLE proveedores ADD COLUMN nombre_comercial TEXT", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN regimen_fiscal TEXT", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN colonia TEXT", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN ciudad TEXT", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN estado TEXT", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN codigo_postal TEXT", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN pais TEXT DEFAULT 'México'", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN telefono_2 TEXT", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN fax TEXT", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN email_2 TEXT", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN pagina_web TEXT", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN banco TEXT", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN cuenta_bancaria TEXT", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN clabe TEXT", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN condiciones_pago TEXT", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN limite_credito DECIMAL(12,2)", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN descuento_pronto_pago DECIMAL(5,2)", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN vendedor_asignado TEXT", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN vendedor_telefono TEXT", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN vendedor_email TEXT", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN tiempo_entrega_dias INTEGER", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN zona_entrega TEXT", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN categoria TEXT", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN tipo TEXT DEFAULT 'producto'", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN calificacion INTEGER DEFAULT 0", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN notas TEXT", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN fecha_alta DATETIME DEFAULT CURRENT_TIMESTAMP", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN fecha_ultima_compra DATETIME", (err) => { });
+            db.run("ALTER TABLE proveedores ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP", (err) => { });
+
+            // Tabla de Facturas Importadas (historial completo de compras)
+            db.run(`
+                CREATE TABLE IF NOT EXISTS facturas_importadas (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    proveedor_id INTEGER,
+                    -- Datos del documento
+                    tipo_documento TEXT DEFAULT 'factura', -- factura, nota, cotizacion, remision
+                    numero_factura TEXT,
+                    uuid TEXT,
+                    folio_fiscal TEXT,
+                    fecha_emision DATETIME,
+                    fecha_llegada DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    -- Datos fiscales
+                    forma_pago TEXT,
+                    metodo_pago TEXT,
+                    uso_cfdi TEXT,
+                    moneda TEXT DEFAULT 'MXN',
+                    tipo_cambio DECIMAL(10,4) DEFAULT 1,
+                    regimen_fiscal_emisor TEXT,
+                    -- Totales
+                    subtotal DECIMAL(12,2),
+                    descuento_total DECIMAL(12,2) DEFAULT 0,
+                    iva DECIMAL(12,2),
+                    isr_retenido DECIMAL(12,2) DEFAULT 0,
+                    iva_retenido DECIMAL(12,2) DEFAULT 0,
+                    total DECIMAL(12,2),
+                    -- Condiciones
+                    condiciones_pago TEXT,
+                    orden_compra_ref TEXT,
+                    anticipo DECIMAL(12,2) DEFAULT 0,
+                    -- Logística
+                    vendedor TEXT,
+                    via_embarque TEXT,
+                    condiciones_embarque TEXT,
+                    -- Archivos
+                    archivo_imagen TEXT,
+                    archivo_xml TEXT,
+                    archivo_pdf TEXT,
+                    -- Control
+                    estado TEXT DEFAULT 'procesada', -- procesada, verificada, cancelada
+                    importado_por_id INTEGER,
+                    sucursal_destino_id INTEGER,
+                    notas TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(proveedor_id) REFERENCES proveedores(id),
+                    FOREIGN KEY(importado_por_id) REFERENCES empleados(id),
+                    FOREIGN KEY(sucursal_destino_id) REFERENCES sucursales(id)
+                )
+            `);
+
+            // Detalle de productos de factura importada
+            db.run(`
+                CREATE TABLE IF NOT EXISTS facturas_importadas_detalle (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    factura_id INTEGER NOT NULL,
+                    producto_id INTEGER,
+                    -- Datos del producto en factura
+                    clave_producto TEXT,
+                    codigo_barras TEXT,
+                    descripcion TEXT,
+                    cantidad DECIMAL(10,3),
+                    unidad TEXT,
+                    -- Precios
+                    precio_unitario DECIMAL(12,4),
+                    descuento_porcentaje DECIMAL(5,2) DEFAULT 0,
+                    descuento_monto DECIMAL(12,2) DEFAULT 0,
+                    importe DECIMAL(12,2),
+                    iva_porcentaje DECIMAL(5,2) DEFAULT 16,
+                    iva_monto DECIMAL(12,2),
+                    total_linea DECIMAL(12,2),
+                    -- Códigos SAT
+                    clave_sat TEXT,
+                    unidad_sat TEXT,
+                    -- Dimensiones (opcionales)
+                    peso_kg DECIMAL(10,3),
+                    ancho_cm DECIMAL(10,2),
+                    largo_cm DECIMAL(10,2),
+                    alto_cm DECIMAL(10,2),
+                    -- Página de origen (para multi-imagen)
+                    pagina_origen INTEGER DEFAULT 1,
+                    -- Control
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY(factura_id) REFERENCES facturas_importadas(id) ON DELETE CASCADE,
+                    FOREIGN KEY(producto_id) REFERENCES productos_catalogo(id)
+                )
+            `);
+
+            // ========================================
+            // TABLA DE MAPEO: SKU Proveedor ↔ Producto Interno
+            // Permite reconocer productos automáticamente por SKU del proveedor
+            // mientras se mantiene un nombre comercial propio en el catálogo
+            // ========================================
+            db.run(`
+                CREATE TABLE IF NOT EXISTS productos_proveedor_mapeo (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    producto_id INTEGER NOT NULL,
+                    proveedor_id INTEGER NOT NULL,
+                    -- Identificadores del proveedor
+                    sku_proveedor TEXT NOT NULL,
+                    codigo_barras_proveedor TEXT,
+                    -- Descripción ORIGINAL de la factura (NO modifica tu nombre comercial)
+                    descripcion_proveedor TEXT,
+                    -- Unidad y conversión
+                    unidad_proveedor TEXT,
+                    factor_conversion DECIMAL(10,4) DEFAULT 1,
+                    -- Precios históricos
+                    ultimo_precio_compra DECIMAL(12,4),
+                    fecha_ultimo_precio DATETIME,
+                    -- Control
+                    notas TEXT,
+                    activo INTEGER DEFAULT 1,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    -- Restricciones
+                    UNIQUE(proveedor_id, sku_proveedor),
+                    FOREIGN KEY(producto_id) REFERENCES productos_catalogo(id) ON DELETE CASCADE,
+                    FOREIGN KEY(proveedor_id) REFERENCES proveedores(id) ON DELETE CASCADE
+                )
+            `);
+
+            // Índices para búsqueda rápida de mapeo
+            db.run(`CREATE INDEX IF NOT EXISTS idx_mapeo_sku ON productos_proveedor_mapeo(sku_proveedor)`);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_mapeo_proveedor ON productos_proveedor_mapeo(proveedor_id)`);
+            db.run(`CREATE INDEX IF NOT EXISTS idx_mapeo_producto ON productos_proveedor_mapeo(producto_id)`);
 
             // Tabla de imágenes de productos
             db.run(`
@@ -344,18 +547,54 @@ const db = new sqlite3.Database(dbPath, (err) => {
 
             // --- FASE 1: COMPRAS Y CEDIS ---
 
-            // Tabla de Proveedores
+            // Tabla de Proveedores (EXTENDIDA con todos los campos de facturas)
             db.run(`
                 CREATE TABLE IF NOT EXISTS proveedores(
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 nombre TEXT NOT NULL,
+                nombre_comercial TEXT,
                 rfc TEXT,
+                regimen_fiscal TEXT,
+                direccion TEXT,
+                colonia TEXT,
+                ciudad TEXT,
+                estado TEXT,
+                codigo_postal TEXT,
+                pais TEXT DEFAULT 'México',
                 contacto_nombre TEXT,
                 telefono TEXT,
+                telefono_2 TEXT,
+                fax TEXT,
                 email TEXT,
+                email_2 TEXT,
+                pagina_web TEXT,
+                -- Datos Bancarios
+                banco TEXT,
+                cuenta_bancaria TEXT,
+                clabe TEXT,
+                -- Condiciones Comerciales
                 dias_credito INTEGER DEFAULT 0,
+                condiciones_pago TEXT,
+                limite_credito DECIMAL(12,2),
+                descuento_pronto_pago DECIMAL(5,2),
+                -- Vendedor/Agente asignado
+                vendedor_asignado TEXT,
+                vendedor_telefono TEXT,
+                vendedor_email TEXT,
+                -- Logística
+                tiempo_entrega_dias INTEGER,
+                zona_entrega TEXT,
+                -- Clasificación
+                categoria TEXT,
+                tipo TEXT DEFAULT 'producto', -- producto, servicio, mixto
+                calificacion INTEGER DEFAULT 0, -- 1-5 estrellas
+                notas TEXT,
+                -- Control
                 activo INTEGER DEFAULT 1,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                fecha_alta DATETIME DEFAULT CURRENT_TIMESTAMP,
+                fecha_ultima_compra DATETIME,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
             `);
 
@@ -458,6 +697,32 @@ const db = new sqlite3.Database(dbPath, (err) => {
                 FOREIGN KEY(ubicacion_id) REFERENCES ubicaciones(id),
                 FOREIGN KEY(producto_id) REFERENCES productos_catalogo(id),
                 UNIQUE(ubicacion_id, producto_id)
+            )
+            `);
+
+            // === MÓDULO FALTANTES ===
+            // Tabla de solicitudes de productos faltantes (sucursales -> CEDIS)
+            db.run(`
+                CREATE TABLE IF NOT EXISTS solicitudes_faltantes(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                sucursal_id INTEGER NOT NULL,
+                producto_id INTEGER NOT NULL,
+                cantidad_solicitada INTEGER NOT NULL,
+                cantidad_aprobada INTEGER DEFAULT 0,
+                tipo TEXT DEFAULT 'manual', -- 'auto' (detectado por sistema) | 'manual' (solicitado por usuario)
+                urgencia TEXT DEFAULT 'normal', -- 'baja' | 'normal' | 'alta' | 'urgente'
+                estado TEXT DEFAULT 'pendiente', -- 'pendiente' | 'aprobada' | 'rechazada' | 'despachada' | 'cancelada'
+                notas TEXT,
+                usuario_solicitante_id INTEGER,
+                usuario_aprobador_id INTEGER,
+                fecha_solicitud DATETIME DEFAULT CURRENT_TIMESTAMP,
+                fecha_respuesta DATETIME,
+                traspaso_id INTEGER, -- Se llena cuando se genera el traspaso
+                FOREIGN KEY(sucursal_id) REFERENCES sucursales(id),
+                FOREIGN KEY(producto_id) REFERENCES productos_catalogo(id),
+                FOREIGN KEY(usuario_solicitante_id) REFERENCES empleados(id),
+                FOREIGN KEY(usuario_aprobador_id) REFERENCES empleados(id),
+                FOREIGN KEY(traspaso_id) REFERENCES traspasos(id)
             )
             `);
 
@@ -836,7 +1101,61 @@ const db = new sqlite3.Database(dbPath, (err) => {
             db.run("ALTER TABLE puntos_venta ADD COLUMN es_maestra INTEGER DEFAULT 1", (err) => { });
             db.run("ALTER TABLE empleados ADD COLUMN caja_asignada_id INTEGER REFERENCES puntos_venta(id)", (err) => { });
 
+            // ========= MIGRACIONES PARA MÓDULO DE COMPRAS =========
+
+            // Tabla de Órdenes de Compra
+            db.run(`
+                CREATE TABLE IF NOT EXISTS ordenes_compra (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    proveedor_id INTEGER REFERENCES proveedores(id),
+                    sucursal_destino_id INTEGER REFERENCES sucursales(id),
+                    estado TEXT DEFAULT 'borrador', -- borrador, emitida, enviada, recibida_parcial, recibida, cancelada
+                    folio TEXT,
+                    fecha_emision DATETIME,
+                    fecha_estimada_llegada DATETIME,
+                    fecha_recepcion DATETIME,
+                    subtotal DECIMAL(12,2) DEFAULT 0,
+                    impuestos DECIMAL(12,2) DEFAULT 0,
+                    descuento DECIMAL(12,2) DEFAULT 0,
+                    total_estimado DECIMAL(12,2) DEFAULT 0,
+                    total_recibido DECIMAL(12,2) DEFAULT 0,
+                    notas TEXT,
+                    creado_por_id INTEGER REFERENCES empleados(id),
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+
+            // Detalle de Órdenes de Compra
+            db.run(`
+                CREATE TABLE IF NOT EXISTS ordenes_compra_detalle (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    orden_id INTEGER REFERENCES ordenes_compra(id) ON DELETE CASCADE,
+                    producto_id INTEGER REFERENCES productos_catalogo(id),
+                    cantidad_solicitada INTEGER DEFAULT 0,
+                    cantidad_recibida INTEGER DEFAULT 0,
+                    precio_unitario DECIMAL(10,2) DEFAULT 0,
+                    subtotal DECIMAL(12,2) DEFAULT 0,
+                    nombre_producto TEXT,
+                    sku TEXT
+                )
+            `);
+
+            // Migraciones para columnas faltantes en productos_catalogo
+            db.run("ALTER TABLE productos_catalogo ADD COLUMN punto_reorden INTEGER DEFAULT 10", (err) => { });
+            db.run("ALTER TABLE productos_catalogo ADD COLUMN stock_minimo INTEGER DEFAULT 5", (err) => { });
+            db.run("ALTER TABLE productos_catalogo ADD COLUMN stock_maximo INTEGER DEFAULT 100", (err) => { });
+
+            // Migraciones para columnas faltantes en transferencias_inventario
+            db.run("ALTER TABLE transferencias_inventario ADD COLUMN created_at DATETIME DEFAULT CURRENT_TIMESTAMP", (err) => { });
+            db.run("ALTER TABLE transferencias_inventario ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP", (err) => { });
+            db.run("ALTER TABLE transferencias_inventario ADD COLUMN solicitado_por_id INTEGER REFERENCES empleados(id)", (err) => { });
+
+            // Migraciones para facturas_importadas
+            db.run("ALTER TABLE facturas_importadas ADD COLUMN estado TEXT DEFAULT 'procesada'", (err) => { });
+
             logger.info('📦 Tablas de Coordinación de Pedidos creadas/verificadas');
+            logger.info('🛒 Tablas de Órdenes de Compra creadas/verificadas');
 
             logger.info('📊 Tablas básicas creadas/verificadas');
             logger.info('👤 Usuario admin creado: admin@megamayoreo.com / admin123');
@@ -861,21 +1180,23 @@ const connectDB = async () => {
 // Simular la interfaz de PostgreSQL para compatibilidad
 const query = (text, params = []) => {
     return new Promise((resolve, reject) => {
-        // Convertir sintaxis PostgreSQL ($1, $2) a SQLite (?)
-        // Y reordenar los parámetros según su aparición
         let sql = text;
         const sqliteParams = [];
 
-        sql = sql.replace(/\$(\d+)/g, (match, number) => {
-            const index = parseInt(number) - 1;
-            // SQLite expects parameters in order of appearance
-            if (index >= 0 && index < params.length) {
-                sqliteParams.push(params[index]);
-            } else {
-                sqliteParams.push(null); // Or undefined, to match behavior
-            }
-            return '?';
-        });
+        if (sql.includes('?') && !sql.includes('$')) {
+            sqliteParams.push(...params);
+        } else {
+            sql = sql.replace(/\$(\d+)/g, (match, number) => {
+                const index = parseInt(number) - 1;
+                // SQLite expects parameters in order of appearance
+                if (index >= 0 && index < params.length) {
+                    sqliteParams.push(params[index]);
+                } else {
+                    sqliteParams.push(null); // Or undefined, to match behavior
+                }
+                return '?';
+            });
+        }
 
         // Ejecutar consulta
         const execute = (cb) => {

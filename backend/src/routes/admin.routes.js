@@ -55,7 +55,7 @@ router.post('/zonas-precio', auth.verifyToken, requireAdmin, async (req, res) =>
             distancia_max_km,
             porcentaje_incremento,
             monto_fijo_extra,
-            activa
+            activo
         } = req.body;
 
         if (!nombre) {
@@ -64,7 +64,7 @@ router.post('/zonas-precio', auth.verifyToken, requireAdmin, async (req, res) =>
 
         const result = await pool.query(`
             INSERT INTO zonas_precio 
-            (nombre, descripcion, distancia_min_km, distancia_max_km, porcentaje_incremento, monto_fijo_extra, activa)
+            (nombre, descripcion, distancia_min_km, distancia_max_km, porcentaje_incremento, monto_fijo_extra, activo)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
             RETURNING *
         `, [
@@ -74,7 +74,7 @@ router.post('/zonas-precio', auth.verifyToken, requireAdmin, async (req, res) =>
             distancia_max_km || 0,
             porcentaje_incremento || 0,
             monto_fijo_extra || 0,
-            activa !== false
+            activo !== false
         ]);
 
         res.json(result.rows[0]);
@@ -97,7 +97,7 @@ router.put('/zonas-precio/:id', auth.verifyToken, requireAdmin, async (req, res)
             distancia_max_km,
             porcentaje_incremento,
             monto_fijo_extra,
-            activa
+            activo
         } = req.body;
 
         const result = await pool.query(`
@@ -108,7 +108,7 @@ router.put('/zonas-precio/:id', auth.verifyToken, requireAdmin, async (req, res)
                 distancia_max_km = COALESCE($5, distancia_max_km),
                 porcentaje_incremento = COALESCE($6, porcentaje_incremento),
                 monto_fijo_extra = COALESCE($7, monto_fijo_extra),
-                activa = COALESCE($8, activa),
+                activo = COALESCE($8, activo),
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = $1
             RETURNING *
@@ -120,7 +120,7 @@ router.put('/zonas-precio/:id', auth.verifyToken, requireAdmin, async (req, res)
             distancia_max_km,
             porcentaje_incremento,
             monto_fijo_extra,
-            activa
+            activo
         ]);
 
         if (!result.rows[0]) {
@@ -171,7 +171,7 @@ router.get('/calcular-precio', auth.verifyToken, async (req, res) => {
         } else if (distancia_km) {
             const result = await pool.query(`
                 SELECT * FROM zonas_precio 
-                WHERE activa = true 
+                WHERE activo = 1 
                 AND $1 >= distancia_min_km 
                 AND $1 < distancia_max_km
                 LIMIT 1

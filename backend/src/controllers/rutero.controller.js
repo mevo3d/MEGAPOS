@@ -152,7 +152,7 @@ const getClientesPendientes = async (req, res) => {
 
 const getZonasPrecios = async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM zonas_precio WHERE activa = true ORDER BY distancia_min_km');
+        const result = await pool.query('SELECT * FROM zonas_precio WHERE activo = 1 ORDER BY distancia_min_km');
         res.json(result.rows);
     } catch (error) {
         logger.error(error);

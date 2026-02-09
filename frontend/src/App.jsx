@@ -29,6 +29,7 @@ import TelemarketingEstadisticas from './pages/telemarketing/TelemarketingEstadi
 import ClasificacionClientes from './pages/telemarketing/ClasificacionClientes';
 import CoordinacionPedidos from './pages/coordinacion/CoordinacionPedidos';
 import SuperAdminDashboard from './pages/admin/bi/SuperAdminDashboard';
+import Configuracion from './pages/admin/Configuracion';
 import AperturaCaja from './pages/pos/AperturaCaja';
 import PreventaPOS from './pages/pos/PreventaPOS';
 import CajaGuard from './components/pos/CajaGuard';
@@ -48,14 +49,14 @@ const ProtectedRoute = ({ children, roles }) => {
         if (user?.rol === 'superadmin') return <Navigate to="/superadmin" />;
         if (user?.rol === 'admin') return <Navigate to="/admin" />;
         if (user?.rol === 'gerente') return <Navigate to="/gerente" />;
+        if (user?.rol === 'gerente_cedis') return <Navigate to="/cedis" />;
         if (user?.rol === 'telemarketing') return <Navigate to="/telemarketing" />;
         if (user?.rol === 'compras') return <Navigate to="/compras" />;
         if (user?.rol === 'capturista') return <Navigate to="/mobile/capture" />;
         if (user?.rol === 'bodeguero') return <Navigate to="/bodega" />;
         if (user?.rol === 'rutero') return <Navigate to="/rutero" />;
-        if (user?.rol === 'gerente_cedis') return <Navigate to="/cedis" />;
         if (user?.rol === 'cajero') return <Navigate to="/pos" />;
-        if (user?.rol === 'vendedor') return <Navigate to="/pos" />;
+        if (user?.rol === 'vendedor') return <Navigate to="/vendedor" />;
         return <Navigate to="/login" />;
     }
 
@@ -76,6 +77,7 @@ function App() {
                     <Route path="/superadmin" element={<ProtectedRoute roles={['superadmin']}><SuperAdminDashboard /></ProtectedRoute>} />
                     <Route path="/admin" element={<ProtectedRoute roles={['admin', 'superadmin']}><AdminDashboard /></ProtectedRoute>} />
                     <Route path="/admin/productos" element={<ProtectedRoute roles={['admin', 'superadmin']}><Productos /></ProtectedRoute>} />
+                    <Route path="/admin/configuracion" element={<ProtectedRoute roles={['superadmin']}><Configuracion /></ProtectedRoute>} />
 
                     {/* Panel Gerente */}
                     <Route path="/gerente" element={<ProtectedRoute roles={['gerente']}><GerenteDashboard /></ProtectedRoute>} />
@@ -92,14 +94,14 @@ function App() {
                     <Route path="/rutero/inventario" element={<ProtectedRoute roles={['rutero', 'admin', 'superadmin']}><RutaInventario /></ProtectedRoute>} />
                     <Route path="/rutero/visitas" element={<ProtectedRoute roles={['rutero', 'admin', 'superadmin']}><RutaVisitas /></ProtectedRoute>} />
                     <Route path="/rutero/venta" element={<ProtectedRoute roles={['rutero', 'admin', 'superadmin']}><RutaVenta /></ProtectedRoute>} />
-                    <Route path="/cedis" element={<ProtectedRoute roles={['gerente_cedis', 'admin', 'superadmin']}><CedisDashboard /></ProtectedRoute>} />
-                    <Route path="/cedis/recepcion" element={<ProtectedRoute roles={['gerente_cedis', 'bodeguero', 'admin', 'superadmin']}><RecepcionMercancia /></ProtectedRoute>} />
-                    <Route path="/cedis/ubicaciones" element={<ProtectedRoute roles={['gerente_cedis', 'bodeguero', 'admin', 'superadmin']}><GestionUbicaciones /></ProtectedRoute>} />
+                    <Route path="/cedis" element={<ProtectedRoute roles={['gerente', 'gerente_cedis', 'admin', 'superadmin', 'compras']}><CedisDashboard /></ProtectedRoute>} />
+                    <Route path="/cedis/recepcion" element={<ProtectedRoute roles={['gerente', 'gerente_cedis', 'bodeguero', 'admin', 'superadmin']}><RecepcionMercancia /></ProtectedRoute>} />
+                    <Route path="/cedis/ubicaciones" element={<ProtectedRoute roles={['gerente', 'gerente_cedis', 'bodeguero', 'admin', 'superadmin']}><GestionUbicaciones /></ProtectedRoute>} />
                     <Route path="/telemarketing" element={<ProtectedRoute roles={['telemarketing', 'admin', 'superadmin']}><TelemarketingDashboard /></ProtectedRoute>} />
                     <Route path="/telemarketing/estadisticas" element={<ProtectedRoute roles={['telemarketing', 'admin', 'superadmin']}><TelemarketingEstadisticas /></ProtectedRoute>} />
                     <Route path="/telemarketing/clasificacion" element={<ProtectedRoute roles={['telemarketing', 'admin', 'superadmin']}><ClasificacionClientes /></ProtectedRoute>} />
-                    <Route path="/coordinacion" element={<ProtectedRoute roles={['telemarketing', 'gerente_cedis', 'admin', 'superadmin']}><CoordinacionPedidos /></ProtectedRoute>} />
-                    <Route path="/inventario/traspasos" element={<ProtectedRoute roles={['bodeguero', 'gerente_cedis', 'admin', 'superadmin']}><Traspasos /></ProtectedRoute>} />
+                    <Route path="/coordinacion" element={<ProtectedRoute roles={['telemarketing', 'gerente', 'gerente_cedis', 'admin', 'superadmin']}><CoordinacionPedidos /></ProtectedRoute>} />
+                    <Route path="/inventario/traspasos" element={<ProtectedRoute roles={['bodeguero', 'gerente', 'gerente_cedis', 'admin', 'superadmin']}><Traspasos /></ProtectedRoute>} />
 
                     {/* POS - Cajero y Vendedor */}
                     <Route path="/pos/apertura" element={<ProtectedRoute roles={['admin', 'superadmin', 'cajero', 'vendedor', 'gerente']}><AperturaCaja /></ProtectedRoute>} />
@@ -121,8 +123,15 @@ function App() {
                     } />
 
                     <Route path="/pos/preparacion" element={<ProtectedRoute roles={['admin', 'superadmin', 'cajero', 'gerente']}><POSLayout><PreparacionPedidos /></POSLayout></ProtectedRoute>} />
-                    <Route path="/pos/cobro" element={<ProtectedRoute roles={['admin', 'superadmin', 'cajero', 'gerente']}><POSLayout><CajaCobro /></POSLayout></ProtectedRoute>} />
+                    <Route path="/pos/cobro" element={<ProtectedRoute roles={['admin', 'superadmin', 'cajero', 'gerente', 'telemarketing']}><POSLayout><CajaCobro /></POSLayout></ProtectedRoute>} />
                     <Route path="/pos/caja" element={<ProtectedRoute roles={['admin', 'superadmin', 'cajero', 'gerente']}><POSLayout><CorteCaja /></POSLayout></ProtectedRoute>} />
+
+                    {/* Vendedor - Dashboard de Precompras */}
+                    <Route path="/vendedor" element={
+                        <ProtectedRoute roles={['vendedor', 'admin', 'superadmin', 'gerente']}>
+                            <POSLayout><PreventaPOS /></POSLayout>
+                        </ProtectedRoute>
+                    } />
 
                     {/* Redirección por defecto */}
                     <Route path="*" element={<Navigate to="/login" />} />
