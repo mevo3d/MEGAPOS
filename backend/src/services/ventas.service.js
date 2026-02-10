@@ -1,20 +1,23 @@
 const { transaction, query } = require('../config/dbAdapter');
 const logger = require('../config/logger');
+const comisionesService = require('./comisiones.service');
 
 class VentasService {
 
     async createVenta(ventaData) {
         return await transaction(async (client) => {
             // 1. Insertar Venta (SQLite structure)
+            // Se agregó vendedor_id para rastrear comisiones
             const ventaResult = await client.query(`
                 INSERT INTO ventas (
-                    sucursal_id, caja_id, empleado_id, cliente_nombre, 
+                    sucursal_id, caja_id, empleado_id, vendedor_id, cliente_nombre, 
                     total, metodo_pago, estado, fecha_venta
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
             `, [
                 ventaData.sucursal_id,
                 ventaData.caja_id,
-                ventaData.empleado_id,
+                ventaData.empleado_id, // Cajero/Usuario que registra
+                ventaData.vendedor_id || ventaData.empleado_id, // Vendedor que gana comisión
                 ventaData.cliente_nombre || 'Publico General',
                 ventaData.total,
                 ventaData.pagos && ventaData.pagos.length > 0 ? ventaData.pagos[0].metodo : 'efectivo',

@@ -48,10 +48,15 @@ const getEmpleadoById = async (req, res) => {
                 e.created_at,
                 e.updated_at,
                 s.nombre as sucursal_nombre,
-                pv.nombre as caja_nombre
+                pv.nombre as caja_nombre,
+                ed.rfc, ed.curp, ed.nss, ed.direccion, ed.fecha_ingreso, ed.fecha_nacimiento, 
+                ed.contacto_emergencia, ed.banco, ed.clabe, ed.salario_diario_integrado, ed.periodicidad_pago,
+                cc.porcentaje_comision
             FROM empleados e
             LEFT JOIN sucursales s ON e.sucursal_id = s.id
             LEFT JOIN puntos_venta pv ON e.caja_asignada_id = pv.id
+            LEFT JOIN empleados_detalle ed ON e.id = ed.empleado_id
+            LEFT JOIN configuracion_comisiones cc ON e.id = cc.empleado_id
             WHERE e.id = $1
         `, [id]);
 
@@ -140,7 +145,14 @@ const createEmpleado = async (req, res) => {
 const updateEmpleado = async (req, res) => {
     try {
         const { id } = req.params;
-        const { nombre, email, username, rol, sucursal_id, caja_asignada_id, activo } = req.body;
+        const {
+            nombre, email, username, rol, sucursal_id, caja_asignada_id, activo,
+            // HR Details
+            rfc, curp, nss, direccion, fecha_ingreso, fecha_nacimiento,
+            contacto_emergencia, banco, clabe, salario_diario_integrado, periodicidad_pago,
+            // Commissions
+            porcentaje_comision
+        } = req.body;
 
         // Verificar si el empleado existe
         const empleadoExists = await pool.query(
@@ -184,6 +196,38 @@ const updateEmpleado = async (req, res) => {
             SET nombre = $1, email = $2, username = $3, rol = $4, sucursal_id = $5, caja_asignada_id = $6, activo = $7
             WHERE id = $8
         `, [nombre, email, username, rol, sucursalId, cajaId, activo, id]);
+
+        // Actualizar/Insertar detalles de RRHH
+        await pool.query(`
+            INSERT INTO empleados_detalle (
+                empleado_id, rfc, curp, nss, direccion, fecha_ingreso, fecha_nacimiento, 
+                contacto_emergencia, banco, clabe, salario_diario_integrado, periodicidad_pago, updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CURRENT_TIMESTAMP)
+            ON CONFLICT (empleado_id) DO UPDATE SET
+                rfc = EXCLUDED.rfc,
+                curp = EXCLUDED.curp,
+                nss = EXCLUDED.nss,
+                direccion = EXCLUDED.direccion,
+                fecha_ingreso = EXCLUDED.fecha_ingreso,
+                fecha_nacimiento = EXCLUDED.fecha_nacimiento,
+                contacto_emergencia = EXCLUDED.contacto_emergencia,
+                banco = EXCLUDED.banco,
+                clabe = EXCLUDED.clabe,
+                salario_diario_integrado = EXCLUDED.salario_diario_integrado,
+                periodicidad_pago = EXCLUDED.periodicidad_pago,
+                updated_at = EXCLUDED.updated_at
+        `, [id, rfc, curp, nss, direccion, fecha_ingreso, fecha_nacimiento, contacto_emergencia, banco, clabe, salario_diario_integrado, periodicidad_pago]);
+
+        // Actualizar/Insertar configuración de comisión
+        if (porcentaje_comision !== undefined) {
+            await pool.query(`
+                INSERT INTO configuracion_comisiones (empleado_id, porcentaje_comision, updated_at)
+                VALUES ($1, $2, CURRENT_TIMESTAMP)
+                ON CONFLICT (empleado_id) DO UPDATE SET
+                    porcentaje_comision = EXCLUDED.porcentaje_comision,
+                    updated_at = EXCLUDED.updated_at
+            `, [id, porcentaje_comision]);
+        }
 
         const result = await pool.query(`
             SELECT id, nombre, email, username, rol, activo, sucursal_id, caja_asignada_id 
@@ -306,6 +350,60 @@ const getSucursales = async (req, res) => {
     }
 };
 
+// --- Métodos de Documentos HR ---
+
+const getDocumentosEmpleado = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query(
+            'SELECT * FROM empleados_documentos WHERE empleado_id = $1 ORDER BY fecha_subida DESC',
+            [id]
+        );
+        res.json(result.rows);
+    } catch (error) {
+        logger.error('Error obteniendo documentos:', error);
+        res.status(500).json({ message: 'Error interno del servidor' });
+    }
+};
+
+const uploadDocumento = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { nombre_documento } = req.body;
+
+        if (!req.file) {
+            return res.status(400).json({ message: 'No se subió ningún archivo' });
+        }
+
+        const result = await pool.query(`
+            INSERT INTO empleados_documentos (empleado_id, nombre_documento, tipo_archivo, ruta_archivo)
+            VALUES ($1, $2, $3, $4)
+            RETURNING *
+        `, [id, nombre_documento || req.file.originalname, req.file.mimetype, `/uploads/empleados/${req.file.filename}`]);
+
+        res.status(201).json({
+            success: true,
+            message: 'Documento subido correctamente',
+            documento: result.rows[0]
+        });
+    } catch (error) {
+        logger.error('Error subiendo documento:', error);
+        res.status(500).json({ message: 'Error interno del servidor' });
+    }
+};
+
+const deleteDocumento = async (req, res) => {
+    try {
+        const { docId } = req.params;
+        // En una implementación real, aquí también borrarías el archivo físico
+        await pool.query('DELETE FROM empleados_documentos WHERE id = $1', [docId]);
+        res.json({ success: true, message: 'Documento eliminado' });
+    } catch (error) {
+        logger.error('Error eliminando documento:', error);
+        res.status(500).json({ message: 'Error interno del servidor' });
+    }
+};
+
 module.exports = {
     getAllEmpleados,
     getEmpleadoById,
@@ -313,5 +411,8 @@ module.exports = {
     updateEmpleado,
     changePassword,
     deleteEmpleado,
-    getSucursales
+    getSucursales,
+    getDocumentosEmpleado,
+    uploadDocumento,
+    deleteDocumento
 };

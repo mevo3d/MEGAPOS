@@ -18,7 +18,10 @@ import {
   Building2,
   Brain,
   DollarSign,
-  Truck // New Icon
+  Truck,
+  Briefcase,
+  Wallet,
+  Calculator
 } from 'lucide-react';
 import ProductImport from './ProductImport';
 import LogoSettings from './LogoSettings';
@@ -31,11 +34,16 @@ import AIAssistant from './ai/AIAssistant';
 import Productos from './Productos';
 import UserManagement from './UserManagement';
 import DispersionInventario from './inventario/DispersionInventario';
+import HRDashboard from './hr/HRDashboard';
+import EmpleadoExpediente from './hr/EmpleadoExpediente';
+import NominaPanel from './hr/NominaPanel';
+import SystemSettings from './SystemSettings';
 
 export default function AdminPanel() {
   const { logout, user } = useAuthStore();
   const [currentSection, setCurrentSection] = useState('dashboard');
   const [showDashboard, setShowDashboard] = useState(true);
+  const [selectedEmpleadoId, setSelectedEmpleadoId] = useState(null);
 
   const menuItems = [
     {
@@ -110,6 +118,21 @@ export default function AdminPanel() {
       icon: Building2,
       description: 'CEDIS, Rutas, Telemarketing'
     },
+    // Solo para superadmin - Nómina y RRHH
+    ...(user?.rol === 'superadmin' ? [
+      {
+        id: 'hr',
+        title: 'Recursos Humanos',
+        icon: Briefcase,
+        description: 'Expedientes y Personal'
+      },
+      {
+        id: 'nomina',
+        title: 'Nómina',
+        icon: Wallet,
+        description: 'Comisiones y Pagos'
+      }
+    ] : []),
     {
       id: 'settings',
       title: 'Configuración',
@@ -149,6 +172,16 @@ export default function AdminPanel() {
         return <Productos />;
       case 'users':
         return <UserManagement />;
+      case 'hr':
+        if (selectedEmpleadoId) {
+          return <EmpleadoExpediente
+            empleadoId={selectedEmpleadoId}
+            onBack={() => setSelectedEmpleadoId(null)}
+          />;
+        }
+        return <HRDashboard onSelectEmpleado={(id) => setSelectedEmpleadoId(id)} />;
+      case 'nomina':
+        return <NominaPanel />;
       case 'settings':
         return <SystemSettings />;
       case 'database':

@@ -73,6 +73,7 @@ const routeFiles = [
     'sincronizacion.routes',
     'ventas.routes',
     'inventario.routes',
+    'nomina.routes',
     'asistencia.routes',
     'monitor.routes',
     'reportes.routes',

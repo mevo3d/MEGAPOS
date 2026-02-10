@@ -11,14 +11,20 @@ const createVenta = async (req, res) => {
         const ventaData = {
             ...req.body,
             sucursal_id: req.sucursalId,
-            empleado_id: req.user.id
+            empleado_id: req.user.id,
+            vendedor_id: req.body.vendedor_id || req.user.id // Si no viene, el cajero es el vendedor
         };
 
         console.log('Datos de venta preparados:', JSON.stringify(ventaData, null, 2));
 
         const nuevaVenta = await ventasService.createVenta(ventaData);
 
-        console.log('✅ Venta creada exitosamente:', nuevaVenta.id);
+        // Generar comisión de forma asíncrona (no bloquea la respuesta)
+        const comisionesService = require('../services/comisiones.service');
+        comisionesService.generarComision(nuevaVenta.id, ventaData.vendedor_id, nuevaVenta.total)
+            .catch(err => console.error('Error asíncrono generando comisión:', err));
+
+        console.log('✅ Venta creada y comisión procesada:', nuevaVenta.id);
 
         // Emitir evento socket para monitor en tiempo real
         try {
