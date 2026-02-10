@@ -39,8 +39,8 @@ export default function AdminDashboard() {
 
     useEffect(() => {
         // Implementación de WebSocket
-        // Usamos el mismo origen del navegador pero con puerto del backend
-        const socketUrl = import.meta.env.VITE_SOCKET_URL || `${window.location.protocol}//${window.location.hostname}:4847`;
+        // Usamos el mismo origen del navegador (funciona con nginx proxy)
+        const socketUrl = import.meta.env.VITE_SOCKET_URL || `${window.location.protocol}//${window.location.hostname}`;
         const socket = io(socketUrl);
 
         socket.on('connect', () => setIsConnected(true));

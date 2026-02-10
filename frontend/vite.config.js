@@ -37,15 +37,22 @@ export default defineConfig({
     },
     server: {
         host: true,
+        port: 7595,
+        strictPort: true,
+        allowedHosts: [
+            'pos.megamayoreo.com',
+            'localhost',
+            '.megamayoreo.com'
+        ],
         proxy: {
             // El proxy redirige /api al backend
             // Para acceso desde red local, el navegador conecta directamente al backend
             '/api': {
-                target: 'http://127.0.0.1:4847',
+                target: 'http://127.0.0.1:4331',
                 changeOrigin: true,
             },
             '/socket.io': {
-                target: 'http://127.0.0.1:4847',
+                target: 'http://127.0.0.1:4331',
                 ws: true,
             }
         }
