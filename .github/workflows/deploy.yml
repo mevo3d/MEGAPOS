@@ -22,5 +22,5 @@ jobs:
             cd ${{ secrets.SERVER_PATH }}
             git pull origin main
             npm run install-all
-            # Reiniciar servicios con PM2 (ajusta si usas otros nombres de procesos)
+            # Reiniciar servicios con PM2
             pm2 restart all || echo "PM2 not running or process not found"
