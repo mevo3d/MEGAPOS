@@ -380,6 +380,59 @@ node src/server.js &
 
 ---
 
+## Configuración Permanente de GitHub Token
+
+### Token Configurado
+
+**Token:** Configurado permanentemente en el servidor (guardado en `~/.git-credentials`)
+**Remote URL:** Configurada con credenciales embebidas
+
+### Verificar Configuración
+
+```bash
+# Ver remote configurado
+git remote -v
+
+# Debe mostrar la URL con el token embebido
+# origin  https://TOKEN@github.com/mevo3d/MEGAPOS.git (fetch)
+# origin  https://TOKEN@github.com/mevo3d/MEGAPOS.git (push)
+```
+
+### Credenciales Guardadas
+
+Las credenciales están guardadas en:
+```bash
+~/.git-credentials
+```
+
+### Si Necesitas Cambiar el Token
+
+```bash
+# Generar nuevo token en GitHub:
+# https://github.com/settings/tokens
+
+# Actualizar remote con nuevo token
+cd /root/megapos
+git remote set-url origin https://NUEVO_TOKEN@github.com/mevo3d/MEGAPOS.git
+
+# Actualizar credenciales
+cat > ~/.git-credentials << 'EOF'
+https://NUEVO_TOKEN@github.com
+EOF
+chmod 600 ~/.git-credentials
+```
+
+### Comandos Git Sin Contraseña
+
+Con esta configuración, puedes hacer git push y git pull sin necesidad de ingresar credenciales:
+
+```bash
+git push origin main    # Funciona sin pedir contraseña
+git pull origin main    # Funciona sin pedir contraseña
+```
+
+---
+
 ## Comandos Útiles
 
 ### Ver Logs
