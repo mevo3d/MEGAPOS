@@ -6,7 +6,7 @@
 const logger = require('./logger');
 
 // Detectar si es SQLite o PostgreSQL
-const isSQLite = process.env.DB_TYPE === 'sqlite' || !process.env.DATABASE_URL;
+const isSQLite = process.env.USE_SQLITE === 'true';
 
 // Importar el pool correcto según el tipo de DB
 const pool = isSQLite

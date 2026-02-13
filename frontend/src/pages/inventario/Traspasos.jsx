@@ -110,9 +110,12 @@ export default function Traspasos() {
 
     const getStatusBadge = (status) => {
         switch (status) {
+            case 'solicitada':
             case 'pendiente': return <Badge variant="warning">Pendiente</Badge>;
-            case 'en_camino': return <Badge variant="info">En Camino</Badge>;
-            case 'recibido': return <Badge variant="success">Recibido</Badge>;
+            case 'en_transito':
+            case 'en_camino': return <Badge variant="info">En Tránsito</Badge>;
+            case 'completada':
+            case 'recibido': return <Badge variant="success">Completado</Badge>;
             default: return <Badge variant="secondary">{status}</Badge>;
         }
     };
@@ -138,14 +141,14 @@ export default function Traspasos() {
             {loading ? <Loading /> : (
                 <div className="grid gap-4">
                     {traspasos.map(t => (
-                        <Card key={t.id} className={`overflow-hidden transition-all ${t.estado === 'en_camino' ? 'border-2 border-green-500 bg-green-50/30 ring-2 ring-green-100' : 'hover:shadow-md'}`}>
+                        <Card key={t.id} className={`overflow-hidden transition-all ${t.estado === 'en_transito' || t.estado === 'en_camino' ? 'border-2 border-green-500 bg-green-50/30 ring-2 ring-green-100' : 'hover:shadow-md'}`}>
                             <div className="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                 <div>
                                     <div className="flex items-center gap-2 mb-1">
                                         <span className="font-bold text-gray-700">#{t.id}</span>
                                         {getStatusBadge(t.estado)}
                                         <span className="text-sm text-gray-500">
-                                            {new Date(t.created_at || t.fecha_solicitud).toLocaleDateString()}
+                                            {new Date(t.fecha_creacion || t.created_at || t.fecha_solicitud).toLocaleDateString()}
                                         </span>
                                     </div>
                                     <div className="text-sm">
@@ -170,8 +173,8 @@ export default function Traspasos() {
                                     )}
 
                                     {/* Recibir: Solo si soy Destino y está en camino */}
-                                    {t.estado === 'en_camino' && (
-                                        <Button size="sm" variant="primary" onClick={() => handleRecibir(t.id)}>
+                                    {(t.estado === 'en_transito' || t.estado === 'en_camino') && (
+                                        <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleRecibir(t.id)}>
                                             <Check className="h-4 w-4 mr-1" />
                                             Confirmar Recepción
                                         </Button>

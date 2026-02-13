@@ -40,8 +40,12 @@ export default function AdminDashboard() {
     useEffect(() => {
         // Implementación de WebSocket
         // Usamos el mismo origen del navegador (funciona con nginx proxy)
-        const socketUrl = import.meta.env.VITE_SOCKET_URL || `${window.location.protocol}//${window.location.hostname}`;
-        const socket = io(socketUrl);
+        const socketUrl = import.meta.env.VITE_SOCKET_URL || window.location.origin;
+        const socket = io(socketUrl, {
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionAttempts: 5
+        });
 
         socket.on('connect', () => setIsConnected(true));
         socket.on('disconnect', () => setIsConnected(false));

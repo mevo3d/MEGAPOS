@@ -48,12 +48,13 @@ export default defineConfig({
             // El proxy redirige /api al backend
             // Para acceso desde red local, el navegador conecta directamente al backend
             '/api': {
-                target: 'http://127.0.0.1:4331',
+                target: 'http://localhost:4847',
                 changeOrigin: true,
             },
             '/socket.io': {
-                target: 'http://127.0.0.1:4331',
+                target: 'http://localhost:4847',
                 ws: true,
+                changeOrigin: true
             }
         }
     }

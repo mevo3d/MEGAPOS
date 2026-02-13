@@ -20,6 +20,9 @@ import {
 import api from '../../utils/api';
 import { io } from 'socket.io-client';
 import ProductImport from '../admin/ProductImport';
+import { RecepcionTraspasos } from '../../components/inventario/RecepcionTraspasos';
+import { GerenteInventory } from '../../components/inventario/GerenteInventory';
+import { ArrowLeftRight } from 'lucide-react';
 
 export default function GerenteDashboard() {
   const { logout, user } = useAuthStore();
@@ -45,7 +48,11 @@ export default function GerenteDashboard() {
 
   useEffect(() => {
     // Usar URL relativa para aprovechar el proxy de Vite
-    const socket = io(import.meta.env.VITE_API_URL || window.location.origin);
+    const socket = io(import.meta.env.VITE_API_URL || window.location.origin, {
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 5
+    });
 
     socket.on('connect', () => setIsConnected(true));
     socket.on('disconnect', () => setIsConnected(false));
@@ -76,6 +83,7 @@ export default function GerenteDashboard() {
 
   const tabs = [
     { id: 'dashboard', name: 'Mi Sucursal', icon: Store },
+    { id: 'recepcion', name: 'Recepción de Envíos', icon: ArrowLeftRight },
     { id: 'import', name: 'Importar Productos', icon: Upload },
     { id: 'employees', name: 'Mis Empleados', icon: UserCheck },
     { id: 'inventory', name: 'Inventario', icon: Package },
@@ -84,6 +92,8 @@ export default function GerenteDashboard() {
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'recepcion':
+        return <RecepcionTraspasos sucursalId={user?.sucursal_id} />;
       case 'import':
         return <ProductImport userRole={user?.rol} sucursalId={user?.sucursal_id} />;
       case 'dashboard':
@@ -253,18 +263,7 @@ export default function GerenteDashboard() {
           </Card>
         );
       case 'inventory':
-        return (
-          <Card className="glass border-0 shadow-xl">
-            <CardContent className="p-8">
-              <div className="text-center text-gray-500">
-                <Package className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-lg font-semibold mb-2">Gestión de Inventario</h3>
-                <p>Controla el stock y existencias de tu sucursal</p>
-                <p className="text-sm mt-2">En desarrollo - Próximamente disponible</p>
-              </div>
-            </CardContent>
-          </Card>
-        );
+        return <GerenteInventory sucursalId={user?.sucursal_id} />;
       case 'reports':
         return (
           <Card className="glass border-0 shadow-xl">

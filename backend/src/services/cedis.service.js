@@ -14,34 +14,34 @@ class CedisService {
                 WHERE sucursal_destino_id = $1 AND estado != 'recibida'
             `, [sucursalId]);
 
-            // 2. Recepciones del mes actual
+            // 2. Recepciones del mes actual (SQLite compatible)
             const recepcionesMesRes = await client.query(`
                 SELECT COUNT(*) as total, COALESCE(SUM(rd.cantidad_recibida), 0) as unidades
                 FROM recepciones r
-                LEFT JOIN recepciones_detalle rd ON r.id = rd.recepcion_id
+                LEFT JOIN recepciones_detalles rd ON r.id = rd.recepcion_id
                 WHERE r.sucursal_id = $1 
-                AND r.fecha_recepcion >= DATE_TRUNC('month', CURRENT_DATE)
+                AND r.fecha_recepcion >= date('now', 'start of month')
             `, [sucursalId]);
 
-            // 3. Productos por caducar (próximos 30 días)
+            // 3. Productos por caducar (próximos 30 días) - SQLite compatible
             const porCaducarRes = await client.query(`
-                SELECT COUNT(DISTINCT rd.producto_id) as productos, SUM(rd.cantidad_recibida) as unidades
-                FROM recepciones_detalle rd
+                SELECT COUNT(DISTINCT rd.producto_id) as productos, COALESCE(SUM(rd.cantidad_recibida), 0) as unidades
+                FROM recepciones_detalles rd
                 JOIN recepciones r ON rd.recepcion_id = r.id
                 WHERE r.sucursal_id = $1 
                 AND rd.fecha_caducidad IS NOT NULL
-                AND rd.fecha_caducidad <= CURRENT_DATE + INTERVAL '30 days'
-                AND rd.fecha_caducidad >= CURRENT_DATE
+                AND rd.fecha_caducidad <= date('now', '+30 days')
+                AND rd.fecha_caducidad >= date('now')
             `, [sucursalId]);
 
             // 4. Productos caducados
             const caducadosRes = await client.query(`
                 SELECT COUNT(DISTINCT rd.producto_id) as productos
-                FROM recepciones_detalle rd
+                FROM recepciones_detalles rd
                 JOIN recepciones r ON rd.recepcion_id = r.id
                 WHERE r.sucursal_id = $1 
                 AND rd.fecha_caducidad IS NOT NULL
-                AND rd.fecha_caducidad < CURRENT_DATE
+                AND rd.fecha_caducidad < date('now')
             `, [sucursalId]);
 
             // 5. Stock bajo (productos con stock < stock_minimo)
@@ -66,17 +66,18 @@ class CedisService {
             // 7. Traspasos pendientes de envío
             const traspasosPendientesRes = await client.query(`
                 SELECT COUNT(*) as total
-                FROM traspasos
-                WHERE sucursal_origen_id = $1 AND estado = 'aprobado'
+                FROM transferencias_inventario
+                WHERE sucursal_origen_id = $1 AND estado IN ('aprobado', 'pendiente')
             `, [sucursalId]);
 
             // 8. Actividad reciente (últimas 5 recepciones)
             const actividadRes = await client.query(`
-                SELECT r.id, r.fecha_recepcion, p.nombre as proveedor_nombre,
-                       COUNT(rd.id) as productos, SUM(rd.cantidad_recibida) as unidades
+                SELECT r.id, r.fecha_recepcion, COALESCE(p.nombre, 'Sin Proveedor') as proveedor_nombre,
+                       COUNT(rd.id) as productos, COALESCE(SUM(rd.cantidad_recibida), 0) as unidades
                 FROM recepciones r
-                LEFT JOIN proveedores p ON r.proveedor_id = p.id
-                LEFT JOIN recepciones_detalle rd ON r.id = rd.recepcion_id
+                LEFT JOIN ordenes_compra oc ON r.orden_compra_id = oc.id
+                LEFT JOIN proveedores p ON oc.proveedor_id = p.id
+                LEFT JOIN recepciones_detalles rd ON r.id = rd.recepcion_id
                 WHERE r.sucursal_id = $1
                 GROUP BY r.id, r.fecha_recepcion, p.nombre
                 ORDER BY r.fecha_recepcion DESC
@@ -104,7 +105,6 @@ class CedisService {
     // --- Recepciones ---
 
     async getOrdenesPendientes(sucursalId) {
-        // En teoría, una sucursal ve las órdenes destinadas a ella
         const res = await pool.query(`
             SELECT oc.*, p.nombre as proveedor_nombre
             FROM ordenes_compra oc
@@ -117,17 +117,16 @@ class CedisService {
 
     async getOrdenDetalle(ordenId) {
         const res = await pool.query(`
-            SELECT ocd.*, p.nombre as producto_nombre, p.sku
-            FROM ordenes_compra_detalle ocd
-            JOIN productos p ON ocd.producto_id = p.id
-            WHERE ocd.orden_compra_id = $1
+            SELECT ocd.*, p.nombre as producto_nombre, p.codigo as sku
+            FROM ordenes_compra_detalles ocd
+            JOIN productos_catalogo p ON ocd.producto_id = p.id
+            WHERE ocd.orden_id = $1
         `, [ordenId]);
         return res.rows;
     }
 
     async registrarRecepcion(data) {
         const { orden_compra_id, sucursal_id, usuario_id, items, notas, proveedor_id } = data;
-        // items: [{ producto_id, cantidad_recibida, ubicacion_id, lote, fecha_caducidad }]
 
         const client = await pool.connect();
         try {
@@ -135,22 +134,20 @@ class CedisService {
 
             // 1. Crear Recepción
             const resRec = await client.query(`
-                INSERT INTO recepciones (orden_compra_id, sucursal_id, usuario_recibe_id, notas, proveedor_id)
-                VALUES ($1, $2, $3, $4, $5)
+                INSERT INTO recepciones (orden_compra_id, sucursal_id, usuario_recibio_id, observaciones)
+                VALUES ($1, $2, $3, $4)
                 RETURNING id
-            `, [orden_compra_id, sucursal_id, usuario_id, notas, proveedor_id]);
+            `, [orden_compra_id, sucursal_id, usuario_id, notas]);
             const recepcionId = resRec.rows[0].id;
 
             // 2. Procesar detalles
             for (const item of items) {
-                // Insertar detalle recepción CON lote y caducidad
                 await client.query(`
-                    INSERT INTO recepciones_detalle (recepcion_id, producto_id, cantidad_recibida, cantidad_esperada, lote, fecha_caducidad)
-                    VALUES ($1, $2, $3, $4, $5, $6)
-                `, [recepcionId, item.producto_id, item.cantidad_recibida, item.cantidad_esperada || 0, item.lote || null, item.fecha_caducidad || null]);
+                    INSERT INTO recepciones_detalles (recepcion_id, producto_id, cantidad_recibida, lote, fecha_caducidad)
+                    VALUES ($1, $2, $3, $4, $5)
+                `, [recepcionId, item.producto_id, item.cantidad_recibida, item.lote || null, item.fecha_caducidad || null]);
 
-                // 3. Actualizar Inventario General (Disponibilidad)
-                // Upsert inventario
+                // 3. Actualizar Inventario (Upsert)
                 const invCheck = await client.query(
                     'SELECT id FROM inventario_sucursal WHERE producto_id=$1 AND sucursal_id=$2',
                     [item.producto_id, sucursal_id]
@@ -168,7 +165,7 @@ class CedisService {
                     `, [sucursal_id, item.producto_id, item.cantidad_recibida]);
                 }
 
-                // 4. (Opcional) Guardar en Ubicación específica si se proveyó
+                // 4. Guardar en Ubicación específica si se proveyó
                 if (item.ubicacion_id) {
                     const ubiCheck = await client.query(
                         'SELECT id FROM producto_ubicaciones WHERE ubicacion_id=$1 AND producto_id=$2',
@@ -227,9 +224,9 @@ class CedisService {
 
     async getContenidoUbicacion(ubicacionId) {
         const res = await pool.query(`
-            SELECT pu.*, p.nombre, p.sku, p.imagen_url
+            SELECT pu.*, p.nombre, p.codigo as sku
             FROM producto_ubicaciones pu
-            JOIN productos p ON pu.producto_id = p.id
+            JOIN productos_catalogo p ON pu.producto_id = p.id
             WHERE pu.ubicacion_id = $1 AND pu.cantidad > 0
         `, [ubicacionId]);
         return res.rows;
@@ -240,8 +237,8 @@ class CedisService {
             SELECT pu.cantidad, u.codigo, u.tipo
             FROM producto_ubicaciones pu
             JOIN ubicaciones u ON pu.ubicacion_id = u.id
-            JOIN productos p ON pu.producto_id = p.id
-            WHERE p.sku = $1 AND u.sucursal_id = $2 AND pu.cantidad > 0
+            JOIN productos_catalogo p ON pu.producto_id = p.id
+            WHERE p.codigo = $1 AND u.sucursal_id = $2 AND pu.cantidad > 0
         `, [sku, sucursalId]);
         return res.rows;
     }

@@ -10,17 +10,17 @@ class InventarioService {
       SELECT 
         p.id, p.codigo as sku, p.nombre, p.descripcion, 
         p.categoria,
-        i.stock_actual as stock_fisico, 0 as stock_disponible, 0 as stock_reservado,
+        COALESCE(i.stock_actual, 0) as stock_fisico, 0 as stock_disponible, 0 as stock_reservado,
         p.precio_venta as precio,
         COALESCE(ventas_count.total_vendido, 0) as veces_vendido
       FROM productos_catalogo p
-      JOIN inventario_sucursal i ON p.id = i.producto_id
+      LEFT JOIN inventario_sucursal i ON p.id = i.producto_id AND i.sucursal_id = $1
       LEFT JOIN (
         SELECT producto_id, SUM(cantidad) as total_vendido
         FROM pedidos_items
         GROUP BY producto_id
       ) ventas_count ON p.id = ventas_count.producto_id
-      WHERE i.sucursal_id = $1
+      WHERE 1=1
     `;
 
         const params = [sucursalId];
@@ -206,6 +206,62 @@ class InventarioService {
         `, [id]);
 
         return { ...header.rows[0], items: details.rows };
+    }
+
+    async aprobarTransferencia(id, userId) {
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            const transRes = await client.query('SELECT * FROM transferencias_inventario WHERE id = $1', [id]);
+            const transferencia = transRes.rows[0];
+
+            if (!transferencia || transferencia.estado !== 'solicitada') {
+                throw new Error('Transferencia no válida para aprobación (debe estar en estado "solicitada")');
+            }
+
+            const detailsRes = await client.query('SELECT * FROM transferencias_detalles WHERE transferencia_id = $1', [id]);
+            const items = detailsRes.rows;
+
+            for (const item of items) {
+                // Descontar de Origen
+                await client.query(`
+                    UPDATE inventario_sucursal
+                    SET stock_actual = stock_actual - $1, updated_at = CURRENT_TIMESTAMP
+                    WHERE sucursal_id = $2 AND producto_id = $3
+                `, [item.cantidad_solicitada, transferencia.sucursal_origen_id, item.producto_id]);
+
+                // Registrar Movimiento Salida
+                await client.query(`
+                    INSERT INTO movimientos_inventario 
+                    (sucursal_id, producto_id, tipo_movimiento, cantidad, referencia_id, usuario_id, observaciones)
+                    VALUES ($1, $2, 'transferencia_salida', $3, $4, $5, 'Envío aprobado para sucursal ' || $6)
+                `, [transferencia.sucursal_origen_id, item.producto_id, item.cantidad_solicitada, id, userId, transferencia.sucursal_destino_id]);
+
+                // Marcar cantidad enviada
+                await client.query(`
+                    UPDATE transferencias_detalles
+                    SET cantidad_enviada = $1
+                    WHERE id = $2
+                `, [item.cantidad_solicitada, item.id]);
+            }
+
+            // Actualizar estado Transferencia
+            await client.query(`
+                UPDATE transferencias_inventario 
+                SET estado = 'en_transito', fecha_envio = CURRENT_TIMESTAMP 
+                WHERE id = $1
+            `, [id]);
+
+            await client.query('COMMIT');
+            return { success: true };
+
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
     }
 
     async confirmarRecepcion(id, itemsRecibidos, userId) {

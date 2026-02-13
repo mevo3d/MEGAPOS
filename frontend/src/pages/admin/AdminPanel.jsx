@@ -336,7 +336,11 @@ function DashboardContent({ user, logout, onNavigate }) {
   React.useEffect(() => {
     const { io } = require('socket.io-client');
     // Usar URL relativa para aprovechar el proxy de Vite
-    const socket = io(import.meta.env.VITE_API_URL || window.location.origin);
+    const socket = io(import.meta.env.VITE_API_URL || window.location.origin, {
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: 5
+    });
 
     socket.on('connect', () => setIsConnected(true));
     socket.on('disconnect', () => setIsConnected(false));

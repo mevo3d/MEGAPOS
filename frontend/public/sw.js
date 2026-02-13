@@ -40,8 +40,8 @@ self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
     if (!url.protocol.startsWith('http')) return;
 
-    // No cachear requests de API
-    if (url.pathname.startsWith('/api/')) {
+    // No cachear requests de API ni socket.io
+    if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/socket.io')) {
         return;
     }
 

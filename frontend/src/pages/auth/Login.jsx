@@ -63,6 +63,8 @@ export default function Login() {
                     navigate('/admin');
                     break;
                 case 'gerente':
+                    navigate('/gerente');
+                    break;
                 case 'gerente_cedis':
                     navigate('/cedis');
                     break;

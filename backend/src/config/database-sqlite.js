@@ -1128,7 +1128,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
 
             // Detalle de Órdenes de Compra
             db.run(`
-                CREATE TABLE IF NOT EXISTS ordenes_compra_detalle (
+                CREATE TABLE IF NOT EXISTS ordenes_compra_detalles (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     orden_id INTEGER REFERENCES ordenes_compra(id) ON DELETE CASCADE,
                     producto_id INTEGER REFERENCES productos_catalogo(id),
@@ -1138,6 +1138,67 @@ const db = new sqlite3.Database(dbPath, (err) => {
                     subtotal DECIMAL(12,2) DEFAULT 0,
                     nombre_producto TEXT,
                     sku TEXT
+                )
+            `);
+
+            // Recepciones de Mercancía
+            db.run(`
+                CREATE TABLE IF NOT EXISTS recepciones (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    orden_compra_id INTEGER REFERENCES ordenes_compra(id),
+                    sucursal_id INTEGER REFERENCES sucursales(id),
+                    usuario_recibio_id INTEGER REFERENCES empleados(id),
+                    observaciones TEXT,
+                    fecha_recepcion DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+
+            db.run(`
+                CREATE TABLE IF NOT EXISTS recepciones_detalles (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    recepcion_id INTEGER REFERENCES recepciones(id) ON DELETE CASCADE,
+                    producto_id INTEGER REFERENCES productos_catalogo(id),
+                    cantidad_recibida INTEGER DEFAULT 0,
+                    lote TEXT,
+                    fecha_caducidad DATETIME
+                )
+            `);
+
+            // Ubicaciones en Almacén
+            db.run(`
+                CREATE TABLE IF NOT EXISTS ubicaciones (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    sucursal_id INTEGER REFERENCES sucursales(id),
+                    codigo TEXT NOT NULL,
+                    tipo TEXT DEFAULT 'anaquel',
+                    notas TEXT,
+                    activo INTEGER DEFAULT 1,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+
+            db.run(`
+                CREATE TABLE IF NOT EXISTS producto_ubicaciones (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ubicacion_id INTEGER REFERENCES ubicaciones(id) ON DELETE CASCADE,
+                    producto_id INTEGER REFERENCES productos_catalogo(id),
+                    cantidad INTEGER DEFAULT 0,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+
+            // Log de Movimientos de Inventario (Auditoría)
+            db.run(`
+                CREATE TABLE IF NOT EXISTS movimientos_inventario (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    sucursal_id INTEGER REFERENCES sucursales(id),
+                    producto_id INTEGER REFERENCES productos_catalogo(id),
+                    tipo_movimiento TEXT NOT NULL, -- entrada, salida, ajuste, transferencia_entrada, transferencia_salida
+                    cantidad INTEGER NOT NULL,
+                    referencia_id INTEGER, -- ID de venta, traspaso o recepción
+                    usuario_id INTEGER REFERENCES empleados(id),
+                    observaciones TEXT,
+                    fecha_movimiento DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             `);
 

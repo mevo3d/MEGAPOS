@@ -5,14 +5,16 @@ import {
     DollarSign, Activity, BarChart3, Settings, Bell,
     RefreshCw, ChevronRight, ArrowUpRight, ArrowDownRight,
     Clock, CheckCircle, AlertTriangle, Eye, Map, Phone,
-    ShoppingCart, CreditCard, Target, Zap, Globe
+    ShoppingCart, CreditCard, Target, Zap, Globe, LogOut
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../../../services/api';
 import { ThemeToggle } from '../../../components/ui/ThemeToggle';
 import { useThemeStore } from '../../../context/themeStore';
+import { useAuthStore } from '../../../context/authStore';
 
 const SuperAdminDashboard = () => {
+    const { logout, user } = useAuthStore();
     const mapRef = useRef(null);
     const mapInstanceRef = useRef(null);
 
@@ -274,13 +276,13 @@ const SuperAdminDashboard = () => {
                             <RefreshCw className={`w-4 h-4 ${loadingStats ? 'animate-spin' : ''}`} />
                             Actualizar
                         </button>
-                        <Link
-                            to="/admin"
-                            className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 rounded-lg transition-colors"
+                        <button
+                            onClick={logout}
+                            className="flex items-center gap-2 px-4 py-2 bg-red-600/20 hover:bg-red-600/40 text-red-400 rounded-lg transition-colors border border-red-500/30"
                         >
-                            <Settings className="w-4 h-4" />
-                            Configuración
-                        </Link>
+                            <LogOut className="w-4 h-4" />
+                            Salir
+                        </button>
                     </div>
                 </div>
             </div>

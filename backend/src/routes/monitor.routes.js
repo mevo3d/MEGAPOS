@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { getDashboardData } = require('../controllers/monitor.controller');
-const { verifyToken, isAdmin } = require('../middleware/auth');
+const { verifyToken, isAdmin, isGerenteOrAdmin } = require('../middleware/auth');
 
-// Solo admins pueden ver el monitor global
+// Admins y Gerentes pueden ver el monitor
 router.use(verifyToken);
-router.use(isAdmin);
+router.use(isGerenteOrAdmin);
 
 router.get('/dashboard', getDashboardData);
 

@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
-import { Building2, PackageCheck, Map, AlertTriangle, TrendingUp, Clock, Package, MapPin, Truck } from 'lucide-react';
+import { Building2, PackageCheck, Map, AlertTriangle, TrendingUp, Clock, Package, MapPin, Truck, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../utils/api';
 import { Loading } from '../../components/ui/Loading';
 import { ThemeToggle } from '../../components/ui/ThemeToggle';
+import { useAuthStore } from '../../context/authStore';
+import { Button } from '../../components/ui/Button';
 
 export default function CedisDashboard() {
     const navigate = useNavigate();
+    const { logout } = useAuthStore();
     const [kpis, setKpis] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -34,9 +37,13 @@ export default function CedisDashboard() {
                 <h1 className="text-2xl font-bold text-gray-800">Panel de Gerente CEDIS</h1>
                 <div className="flex items-center gap-4">
                     <ThemeToggle />
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-gray-500 mr-2">
                         {new Date().toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                     </div>
+                    <Button variant="outline" onClick={logout} className="hover-lift border-gray-200">
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Salir
+                    </Button>
                 </div>
             </div>
 
